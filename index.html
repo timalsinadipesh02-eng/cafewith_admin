@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sparsa Cafe</title>
+<style>
+body{margin:0;font-family:Arial;background:#0f0f0f;color:#fff}
+header{padding:15px;text-align:center;background:#3e2723;position:sticky;top:0}
+.topBar{display:flex;justify-content:center;align-items:center;gap:10px;padding:10px;background:#1b1b1b;position:sticky;top:60px;z-index:10}
+select{padding:8px;border-radius:6px;border:none}
+.menu{display:flex;flex-wrap:wrap;justify-content:center;padding:10px}
+.card{background:#1e1e1e;margin:10px;padding:10px;border-radius:12px;width:160px;box-shadow:0 0 10px rgba(0,0,0,0.5)}
+.card img{width:100%;border-radius:10px;height:100px;object-fit:cover}
+button{background:#795548;color:#fff;border:none;padding:5px 10px;border-radius:6px;cursor:pointer}
+button:hover{background:#a1887f}
+.categoryBtn{padding:10px 15px;background:#555;margin:5px;border-radius:6px;cursor:pointer;font-weight:bold;transition:all 0.3s}
+.categoryBtn:hover{background:#777}
+.categoryBtn.active{background:#8b4513;color:#ffd700;box-shadow:0 0 10px #8b4513}
+.cartBar{position:fixed;bottom:0;width:100%;background:#000;padding:10px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.midGroup{display:flex;gap:10px}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:none;justify-content:center;align-items:center}
+.modal-content{background:#222;padding:20px;border-radius:10px;width:90%;max-width:400px}
+.toast{position:fixed;top:20px;right:20px;background:#4caf50;padding:10px;border-radius:5px;display:none;z-index:999}
+.cartItem{display:flex;justify-content:space-between;align-items:center;margin:6px 0;padding:8px;background:#111;border-radius:6px}
+.qtyBox{display:flex;align-items:center;gap:5px}
+.qtyBtn{padding:2px 8px;font-size:14px}
+.smallBtn{padding:2px 6px;font-size:12px}
+.addModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:none;justify-content:center;align-items:center}
+.addModal-content{background:#222;padding:20px;border-radius:10px;width:90%;max-width:300px;text-align:center}
+@media (max-width: 768px) {
+body { font-size: 14px; }
+header { padding: 10px; }
+.topBar { padding: 5px; }
+.menu { padding: 5px; }
+.card { width: calc(50% - 10px); margin: 5px; }
+.cartBar { padding: 5px; }
+.modal-content { max-width: 350px; padding: 15px; }
+.addModal-content { max-width: 280px; padding: 15px; }
+}
+@media (max-width: 480px) {
+.card { width: calc(100% - 10px); }
+.qtyBox { gap: 3px; }
+.qtyBtn { padding: 1px 6px; font-size: 12px; }
+.menu { margin-bottom: 60px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+<h2>☕ Sparsa Cafe</h2>
+</header>
+
+<div class="topBar">
+<label>Table:</label>
+<select id="tableSelect">
+<option value="1">Table 1</option>
+<option value="2">Table 2</option>
+<option value="3">Table 3</option>
+<option value="4">Table 4</option>
+<option value="5">Table 5</option>
+<option value="6">Table 6</option>
+</select>
+<button id="adminBtn" style="background:#795548;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;">Admin Panel</button>
+</div>
+
+<div class="categoryBar" id="categoryBar" style="display:flex;justify-content:center;gap:10px;padding:15px;background:#2a2a2a;flex-wrap:wrap;">
+<button class="categoryBtn active" onclick="filterCategory('all', this)">All Items</button>
+<button class="categoryBtn" onclick="filterCategory('hot-drinks', this)">☕ Hot Drinks</button>
+<button class="categoryBtn" onclick="filterCategory('cold-drinks', this)">🧊 Cold Drinks</button>
+<button class="categoryBtn" onclick="filterCategory('snacks', this)">🍟 Snacks</button>
+<button class="categoryBtn" onclick="filterCategory('smoke', this)">🚬 Smoke</button>
+</div>
+
+<div class="menu" id="menu"></div>
+
+<footer style="text-align:center;padding:20px;background:#1b1b1b;color:#fff;margin-top:20px;">
+Thank you for visiting our cafe!
+</footer>
+
+<div class="cartBar">
+<span>Cart: <span id="count">0</span></span>
+<div class="midGroup">
+<span id="total">Rs. 0</span>
+<button id="viewBtn">View</button>
+</div>
+<div></div>
+</div>
+
+<div class="modal" id="modal">
+<div class="modal-content">
+<h3>Your Order</h3>
+<div id="cartItems"></div>
+<h4 id="finalTotal"></h4>
+<button id="confirmBtn">Confirm Order</button>
+<button id="clearBtn">Clear Cart</button>
+<button id="closeBtn">Close</button>
+</div>
+</div>
+
+<div class="addModal" id="addModal">
+<div class="addModal-content">
+<h3>Add to Cart</h3>
+<img id="addItemImg" style="width:100%;border-radius:10px;margin-bottom:10px;">
+<h4 id="addItemName"></h4>
+<p id="addItemPrice"></p>
+<div class="qtyBox" style="justify-content:center;margin:10px 0;">
+<button id="addDecreaseBtn" class="qtyBtn">-</button>
+<span id="addQty">1</span>
+<button id="addIncreaseBtn" class="qtyBtn">+</button>
+</div>
+<p id="addTotal" style="font-weight:bold;"></p>
+<button id="addConfirmBtn">Add to Cart</button>
+<button id="addCloseBtn">Cancel</button>
+</div>
+</div>
+
+<div class="toast" id="toast">Done</div>
+
+<script>
+let table="1";
+let cart=[];
+let currentCategory="all";
+const ADMIN_PASSWORD='admin123';
+
+const defaultMenu=[
+// Hot Drinks
+{name:"Coffee",price:100,img:"https://source.unsplash.com/200x150/?coffee",category:"hot-drinks"},
+{name:"Tea",price:50,img:"https://source.unsplash.com/200x150/?tea",category:"hot-drinks"},
+{name:"Cappuccino",price:150,img:"https://source.unsplash.com/200x150/?cappuccino",category:"hot-drinks"},
+{name:"Hot Chocolate",price:120,img:"https://source.unsplash.com/200x150/?hot-chocolate",category:"hot-drinks"},
+{name:"Latte",price:140,img:"https://source.unsplash.com/200x150/?latte",category:"hot-drinks"},
+{name:"Espresso",price:80,img:"https://source.unsplash.com/200x150/?espresso",category:"hot-drinks"},
+
+// Cold Drinks
+{name:"Iced Coffee",price:120,img:"https://source.unsplash.com/200x150/?iced-coffee",category:"cold-drinks"},
+{name:"Iced Tea",price:60,img:"https://source.unsplash.com/200x150/?iced-tea",category:"cold-drinks"},
+{name:"Smoothie",price:130,img:"https://source.unsplash.com/200x150/?smoothie",category:"cold-drinks"},
+{name:"Cold Brew",price:110,img:"https://source.unsplash.com/200x150/?cold-brew",category:"cold-drinks"},
+{name:"Milkshake",price:140,img:"https://source.unsplash.com/200x150/?milkshake",category:"cold-drinks"},
+{name:"Lemonade",price:70,img:"https://source.unsplash.com/200x150/?lemonade",category:"cold-drinks"},
+
+// Snacks
+{name:"Burger",price:250,img:"https://source.unsplash.com/200x150/?burger",category:"snacks"},
+{name:"Pizza",price:500,img:"https://source.unsplash.com/200x150/?pizza",category:"snacks"},
+{name:"Sandwich",price:180,img:"https://source.unsplash.com/200x150/?sandwich",category:"snacks"},
+{name:"Fries",price:120,img:"https://source.unsplash.com/200x150/?fries",category:"snacks"},
+{name:"Samosa",price:40,img:"https://source.unsplash.com/200x150/?samosa",category:"snacks"},
+{name:"Pastry",price:100,img:"https://source.unsplash.com/200x150/?pastry",category:"snacks"},
+
+// Smoke Variety
+{name:"Cigarettes - Pack",price:300,img:"https://source.unsplash.com/200x150/?cigarettes",category:"smoke"},
+{name:"Cigars",price:400,img:"https://source.unsplash.com/200x150/?cigars",category:"smoke"},
+{name:"Pipe Tobacco",price:350,img:"https://source.unsplash.com/200x150/?tobacco",category:"smoke"},
+{name:"Rolling Papers",price:50,img:"https://source.unsplash.com/200x150/?rolling-papers",category:"smoke"}
+];
+
+function getMenu(){
+let stored = localStorage.getItem('cafeMenu');
+if(stored){
+return JSON.parse(stored);
+}else{
+localStorage.setItem('cafeMenu', JSON.stringify(defaultMenu));
+return defaultMenu;
+}
+}
+
+let menu = getMenu();
+
+function filterCategory(cat, btn){
+currentCategory=cat;
+render();
+// Update active button
+document.querySelectorAll('.categoryBtn').forEach(btn=>btn.classList.remove('active'));
+btn.classList.add('active');
+}
+
+function setTable(){
+table=document.getElementById("tableSelect").value;
+showToast("Table selected: "+table);
+}
+
+function render(){
+const m=document.getElementById("menu");
+m.innerHTML="";
+
+let currentMenu = getMenu();
+let filtered=currentMenu;
+if(currentCategory!=="all"){
+filtered=currentMenu.filter(item=>item.category===currentCategory);
+}
+
+filtered.forEach((item,idx)=>{
+const menuIdx=currentMenu.indexOf(item);
+const div=document.createElement("div");
+div.className="card";
+div.innerHTML=`
+<img src="${item.img}">
+<h4>${item.name}</h4>
+<p>Rs. ${item.price}</p>
+<button onclick="openAddModal(${menuIdx})">Add to Cart</button>
+`;
+m.appendChild(div);
+});
+}
+
+function add(i){
+let item=menu[i];
+let found=cart.find(c=>c.name===item.name);
+if(found){found.qty++;}else{cart.push({...item,qty:1});}
+update();
+showToast("Added to cart");
+}
+
+function increase(index){
+cart[index].qty++;
+update();
+openCart();
+}
+
+function decrease(index){
+cart[index].qty--;
+if(cart[index].qty<=0){cart.splice(index,1);} 
+update();
+openCart();
+}
+
+function clearCart(){
+cart=[];
+update();
+openCart();
+showToast("Cart cleared");
+}
+
+function update(){
+let count=cart.reduce((a,b)=>a+b.qty,0);
+let total=cart.reduce((a,b)=>a+b.price*b.qty,0);
+document.getElementById("count").innerText=count;
+document.getElementById("total").innerText="Rs. "+total;
+}
+
+function openCart(){
+document.getElementById("modal").style.display="flex";
+let box=document.getElementById("cartItems");
+box.innerHTML="";
+let total=0;
+
+cart.forEach((i,idx)=>{
+let div=document.createElement("div");
+div.className="cartItem";
+div.innerHTML=`
+<span>${i.name} = Rs. ${i.price*i.qty}</span>
+<div class="qtyBox">
+<button class="qtyBtn" onclick="decrease(${idx})">-</button>
+<span>${i.qty}</span>
+<button class="qtyBtn" onclick="increase(${idx})">+</button>
+</div>
+`;
+box.appendChild(div);
+total+=i.price*i.qty;
+});
+
+document.getElementById("finalTotal").innerText="Total: Rs. "+total;
+}
+
+function closeCart(){
+document.getElementById("modal").style.display="none";
+}
+
+function checkout(){
+let msg=`Table No: ${table}%0AOrder:%0A`;
+let total=0;
+cart.forEach(i=>{
+msg+=`- ${i.name} x${i.qty}%0A`;
+total+=i.price*i.qty;
+});
+msg+=`Total: Rs. ${total}`;
+window.location.href=`https://wa.me/9779768434252?text=${msg}`;
+}
+
+function promptAdmin(){
+let pass = prompt('Enter admin password:');
+if(pass === ADMIN_PASSWORD){
+window.location.href = 'admin.html';
+}else if(pass !== null){
+showToast('Incorrect password');
+}
+}
+
+function showToast(text="Done"){
+let t=document.getElementById("toast");
+t.innerText=text;
+t.style.display="block";
+setTimeout(()=>t.style.display="none",1500);
+}
+
+let currentAddIndex;
+
+function openAddModal(i){
+let item=getMenu()[i];
+document.getElementById("addModal").style.display="flex";
+document.getElementById("addItemName").innerText=item.name;
+document.getElementById("addItemImg").src=item.img;
+document.getElementById("addItemPrice").innerText="Rs. "+item.price;
+document.getElementById("addQty").innerText=1;
+document.getElementById("addTotal").innerText="Total: Rs. "+item.price;
+currentAddIndex=i;
+}
+
+function increaseAdd(){
+let qty=parseInt(document.getElementById("addQty").innerText);
+qty++;
+document.getElementById("addQty").innerText=qty;
+updateAddTotal();
+}
+
+function decreaseAdd(){
+let qty=parseInt(document.getElementById("addQty").innerText);
+if(qty>1)qty--;
+document.getElementById("addQty").innerText=qty;
+updateAddTotal();
+}
+
+function updateAddTotal(){
+let qty = parseInt(document.getElementById("addQty").innerText);
+let item = getMenu()[currentAddIndex];
+let total = item.price * qty;
+document.getElementById("addTotal").innerText = "Total: Rs. " + total;
+}
+
+function addToCart(){
+let qty=parseInt(document.getElementById("addQty").innerText);
+let item=getMenu()[currentAddIndex];
+let found=cart.find(c=>c.name===item.name);
+if(found){found.qty+=qty;}else{cart.push({...item,qty:qty});}
+update();
+closeAddModal();
+showToast("Added to cart");
+}
+
+function closeAddModal(){
+document.getElementById("addModal").style.display="none";
+}
+
+window.addEventListener("load",()=>{
+render();
+update();
+
+document.getElementById("tableSelect").addEventListener("change",setTable);
+document.getElementById("adminBtn").addEventListener("click",promptAdmin);
+document.getElementById("viewBtn").addEventListener("click",openCart);
+document.getElementById("closeBtn").addEventListener("click",closeCart);
+document.getElementById("confirmBtn").addEventListener("click",checkout);
+document.getElementById("clearBtn").addEventListener("click",clearCart);
+document.getElementById("addIncreaseBtn").addEventListener("click", increaseAdd);
+document.getElementById("addDecreaseBtn").addEventListener("click", decreaseAdd);
+document.getElementById("addConfirmBtn").addEventListener("click", addToCart);
+document.getElementById("addCloseBtn").addEventListener("click", closeAddModal);
+});
+</script>
+
+</body>
+</html>
